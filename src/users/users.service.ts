@@ -4,17 +4,31 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcrypt';
+import { LoginUserDto } from './dto/login-user.dto';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private jwtService: JwtService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
-    const user = this.usersRepository.create(createUserDto);
-    return await this.usersRepository.save(user);
+    const user = await this.usersRepository.findOne({
+      where: { email: createUserDto.email },
+    });
+    if (user) {
+      throw new NotFoundException('User already exists');
+    }
+
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+    return await this.usersRepository.save({
+      ...createUserDto,
+      password: hashedPassword,
+    });
   }
 
   async findAll() {
@@ -49,5 +63,31 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
     return await this.usersRepository.remove(user);
+  }
+
+  async login(loginUserDto: LoginUserDto) {
+    const user = await this.usersRepository.findOne({
+      where: { email: loginUserDto.email },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const isPasswordValid = await bcrypt.compare(
+      loginUserDto.password,
+      user.password,
+    );
+    if (!isPasswordValid) {
+      throw new NotFoundException('Invalid credentials');
+    }
+
+    const payload = { email: user.email, sub: user.id };
+    const access_token = await this.jwtService.signAsync(payload, {
+      secret: process.env.JWT_SECRET,
+    });
+
+    return {
+      access_token: access_token,
+    };
   }
 }
