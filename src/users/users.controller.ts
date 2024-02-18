@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -42,15 +43,21 @@ export class UsersController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
-  async update(@Param('id') id: number, @Body() updateUserDto: UpdateUserDto) {
-    const result = await this.usersService.update(id, updateUserDto);
+  async update(
+    @Param('id') id: number,
+    @Body() updateUserDto: UpdateUserDto,
+    @Req() req: any,
+  ) {
+    const userId = req.user.id;
+    const result = await this.usersService.update(id, updateUserDto, userId);
     return this.createResponse(result, 'User updated successfully', 200);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  async remove(@Param('id') id: number) {
-    const result = await this.usersService.remove(id);
+  async remove(@Param('id') id: number, @Req() req: any) {
+    const userId = req.user.id;
+    const result = await this.usersService.remove(id, userId);
     return this.createResponse(result, 'User deleted successfully', 200);
   }
 

@@ -45,10 +45,14 @@ export class UsersService {
     return user;
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
+  async update(id: number, updateUserDto: UpdateUserDto, userId: number) {
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('User not found');
+    }
+
+    if (user.id !== userId) {
+      throw new NotFoundException('You are not authorized to update this user');
     }
 
     return await this.usersRepository.save({
@@ -57,11 +61,16 @@ export class UsersService {
     });
   }
 
-  async remove(id: number) {
+  async remove(id: number, userId: number) {
     const user = await this.usersRepository.findOne({ where: { id } });
     if (!user) {
       throw new NotFoundException('User not found');
     }
+
+    if (user.id !== userId) {
+      throw new NotFoundException('You are not authorized to delete this user');
+    }
+
     return await this.usersRepository.remove(user);
   }
 
