@@ -25,10 +25,13 @@ export class UsersService {
     }
 
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    return await this.usersRepository.save({
+    const savedUser = await this.usersRepository.save({
       ...createUserDto,
       password: hashedPassword,
     });
+
+    const { password, ...result } = savedUser;
+    return result;
   }
 
   async findAll() {
@@ -42,7 +45,8 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
-    return user;
+    const { password, ...result } = user;
+    return result;
   }
 
   async update(id: number, updateUserDto: UpdateUserDto, userId: number) {
