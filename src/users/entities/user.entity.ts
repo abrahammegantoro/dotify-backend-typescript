@@ -1,4 +1,4 @@
-import { Post } from 'src/posts/entities/post.entity';
+import { Post } from '@/posts/entities/post.entity';
 import { PrimaryGeneratedColumn, Column, Entity, OneToMany } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 
